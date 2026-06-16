@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,6 +72,42 @@
 
   .edit-link { color: #bbb; cursor: pointer; font-size: 0.75rem; margin-left: 6px; }
   .edit-link:hover { color: #6c63ff; }
+
+  @media (max-width: 768px) {
+    header { padding: 16px; flex-wrap: wrap; gap: 8px; }
+    header h1 { font-size: 1.15rem; }
+    .count-badge { margin-left: 0; }
+
+    .toolbar { padding: 12px 16px; }
+    .search-wrap { min-width: 0; flex: 1 1 100%; }
+    .filters { flex: 1 1 100%; }
+    .filter-btn { font-size: 0.74rem; padding: 6px 10px; }
+    .add-btn { flex: 1 1 100%; justify-content: center; }
+
+    .table-wrap { padding: 12px; }
+
+    table { box-shadow: none; background: transparent; border-spacing: 0; }
+    thead { display: none; }
+    tbody { display: block; }
+    tr { display: block; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 12px; }
+    tr:last-child { margin-bottom: 0; }
+    tr:hover td { background: transparent; }
+    td { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; text-align: right; padding: 9px 14px; border-bottom: 1px solid #f0ebe0; max-width: none; }
+    tr td:last-child { border-bottom: none; }
+    td::before { content: attr(data-label); text-align: left; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; color: #999; flex-shrink: 0; }
+    .name-cell { display: flex; align-items: center; }
+    .name-cell::before { display: none; }
+    .name-cell { font-size: 1rem; }
+    .desc-cell, .notes-cell { max-width: 65%; }
+
+    .modal { padding: 20px; max-height: 90vh; overflow-y: auto; }
+    .form-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+  }
+
+  @media (max-width: 420px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-row .form-group { grid-column: 1/-1; }
+  }
 </style>
 </head>
 <body>
@@ -105,7 +142,6 @@
         <th onclick="setSort('nemo')">🐟 Nemo <span class="sort-icon">↕</span></th>
         <th onclick="setSort('chipper')">🍪 Chipper <span class="sort-icon">↕</span></th>
         <th>Notes</th>
-        <th></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -402,12 +438,11 @@ function render() {
   tbody.innerHTML = data.map(s => {
     const idx = sauces.indexOf(s);
     return `<tr>
-      <td class="name-cell">${esc(s.name)}<span class="edit-link" onclick="openEdit(${idx})">✏️</span></td>
-      <td class="desc-cell">${esc(s.description)}</td>
-      <td>${ratingBadge(s.nemo)}</td>
-      <td>${ratingBadge(s.chipper)}</td>
-      <td class="notes-cell">${esc(s.notes)}</td>
-      <td></td>
+      <td class="name-cell" data-label="Name">${esc(s.name)}<span class="edit-link" onclick="openEdit(${idx})">✏️</span></td>
+      <td class="desc-cell" data-label="Description">${esc(s.description)}</td>
+      <td data-label="🐟 Nemo">${ratingBadge(s.nemo)}</td>
+      <td data-label="🍪 Chipper">${ratingBadge(s.chipper)}</td>
+      <td class="notes-cell" data-label="Notes">${esc(s.notes)}</td>
     </tr>`;
   }).join('');
 }
