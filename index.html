@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fish & Chips Definitive Sauce Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f0e8; color: #2d2d2d; min-height: 100vh; }
+
+  header { background: #1a1a2e; color: #fff; padding: 20px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; }
+  .count-badge { margin-left: auto; background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; white-space: nowrap; }
+
+  .toolbar { background: #fff; border-bottom: 1px solid #e0d9cc; padding: 14px 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; position: sticky; top: 0; z-index: 10; }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap input { width: 100%; padding: 8px 12px 8px 34px; border: 1.5px solid #d0c9bc; border-radius: 8px; font-size: 0.9rem; background: #faf8f4; }
+  .search-wrap input:focus { outline: none; border-color: #6c63ff; }
+  .search-wrap .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #999; font-size: 0.9rem; }
+
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn { padding: 6px 12px; border-radius: 20px; border: 1.5px solid #d0c9bc; background: #faf8f4; font-size: 0.78rem; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .filter-btn:hover { border-color: #6c63ff; color: #6c63ff; }
+  .filter-btn.active { background: #6c63ff; border-color: #6c63ff; color: #fff; }
+
+  .add-btn { margin-left: auto; padding: 8px 16px; background: #e85d3a; color: #fff; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .add-btn:hover { background: #d14e2d; }
+
+  .table-wrap { padding: 20px 24px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  th { position: sticky; top: var(--toolbar-h, 57px); z-index: 5; background: #1a1a2e; color: #fff; padding: 11px 14px; text-align: left; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; user-select: none; white-space: nowrap; box-shadow: 0 2px 0 #000; }
+  th:hover { background: #2a2a4e; }
+  th .sort-icon { opacity: 0.5; margin-left: 4px; }
+  th.sorted .sort-icon { opacity: 1; }
+  td { padding: 10px 14px; font-size: 0.87rem; border-bottom: 1px solid #f0ebe0; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #faf8f4; }
+  .name-cell { font-weight: 600; }
+  .desc-cell { color: #666; font-size: 0.82rem; max-width: 280px; }
+  .notes-cell { color: #888; font-size: 0.82rem; font-style: italic; max-width: 200px; }
+
+  .rating { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+  .rating.yes    { background: #d4f4dd; color: #1a7a35; }
+  .rating.no     { background: #fde8e8; color: #c0392b; }
+  .rating.noestar{ background: #ffe4d6; color: #c0392b; }
+  .rating.maybe  { background: #fff4cc; color: #8a6000; }
+  .rating.unsure { background: #e8e8f0; color: #555; }
+  .rating.blank  { background: #f0f0f0; color: #999; }
+
+  .empty-state { text-align: center; padding: 60px 24px; color: #999; }
+  .empty-state .big { font-size: 2.5rem; margin-bottom: 12px; }
+  .empty-state .add-from-search { margin-top: 16px; padding: 8px 20px; background: #e85d3a; color: #fff; border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+  .empty-state .add-from-search:hover { background: #d14e2d; }
+
+  /* Modal */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 28px; width: 100%; max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 20px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group label { font-size: 0.78rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-group input, .form-group select, .form-group textarea { padding: 8px 10px; border: 1.5px solid #d0c9bc; border-radius: 7px; font-size: 0.88rem; font-family: inherit; background: #faf8f4; }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #6c63ff; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .btn-cancel { padding: 8px 18px; border: 1.5px solid #ccc; background: #fff; border-radius: 7px; cursor: pointer; font-size: 0.88rem; }
+  .btn-save { padding: 8px 18px; background: #e85d3a; color: #fff; border: none; border-radius: 7px; cursor: pointer; font-size: 0.88rem; font-weight: 600; }
+  .btn-save:hover { background: #d14e2d; }
+
+  .edit-link { color: #bbb; cursor: pointer; font-size: 0.75rem; margin-left: 6px; }
+  .edit-link:hover { color: #6c63ff; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fish &amp; Chips Definitive Sauce Guide</h1>
+  <span class="count-badge" id="countBadge">— sauces</span>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="icon">🔍</span>
+    <input type="text" id="search" placeholder="Search sauces…" oninput="render()">
+  </div>
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter(this)">All</button>
+    <button class="filter-btn" data-filter="yes" onclick="setFilter(this)">✅ Both yes</button>
+    <button class="filter-btn" data-filter="nemo-yes" onclick="setFilter(this)">🐟 Nemo yes</button>
+    <button class="filter-btn" data-filter="chipper-yes" onclick="setFilter(this)">🍪 Chipper yes</button>
+    <button class="filter-btn" data-filter="unsure" onclick="setFilter(this)">🤔 Unsure</button>
+    <button class="filter-btn" data-filter="no" onclick="setFilter(this)">❌ Both no</button>
+  </div>
+  <button class="add-btn" onclick="openModal()">+ Add Sauce</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="setSort('name')">Name <span class="sort-icon">↕</span></th>
+        <th onclick="setSort('description')">Description <span class="sort-icon">↕</span></th>
+        <th onclick="setSort('nemo')">🐟 Nemo <span class="sort-icon">↕</span></th>
+        <th onclick="setSort('chipper')">🍪 Chipper <span class="sort-icon">↕</span></th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="big">🫙</div>
+    <div>No sauces match your search.</div>
+    <button class="add-from-search" onclick="openModalFromSearch()">+ Add Sauce</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="closeIfBg(event)">
+  <div class="modal">
+    <h2 id="modalTitle">Add New Sauce</h2>
+    <div class="form-row">
+      <div class="form-group full">
+        <label>Sauce Name</label>
+        <input type="text" id="fName" placeholder="e.g. Sriracha">
+      </div>
+      <div class="form-group full">
+        <label>Description</label>
+        <input type="text" id="fDesc" placeholder="Brief description">
+      </div>
+      <div class="form-group">
+        <label>🐟 Nemo</label>
+        <select id="fNemo">
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+          <option value="no*">No*</option>
+          <option value="maybe">Maybe</option>
+          <option value="unsure" selected>Unsure</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>🍪 Chipper</label>
+        <select id="fChipper">
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+          <option value="no*">No*</option>
+          <option value="maybe">Maybe</option>
+          <option value="unsure" selected>Unsure</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Notes</label>
+        <textarea id="fNotes" placeholder="Any caveats, exceptions, thoughts…"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveSauce()">Save Sauce</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const RAW = [
+  ["Alfredo sauce","Italian pasta dish with butter and cheese","yes","no","it doesn't need to make sense"],
+  ["Au jus","Meat gravy made from cooking juices","yes","yes",""],
+  ["Black pepper","Ground fruit of the family Piperaceae","yes","yes",""],
+  ["Butter","Dairy product","yes","yes",""],
+  ["Chili peppers","Genus of flowering plants","yes","yes",""],
+  ["Caramel","Confectionery product made by heating sugars","yes","yes",""],
+  ["Chili oil","Condiment made from chili peppers","yes","yes",""],
+  ["Chili sauce","Condiment prepared with chili peppers","yes","yes",""],
+  ["Chimichurri","Food sauce","yes","yes",""],
+  ["Chocolate spread","Sweet chocolate-flavored paste","yes","yes",""],
+  ["Chocolate syrup","Chocolate-flavored condiment used as a topping or ingredient","yes","yes",""],
+  ["Compote","Dessert of fruit cooked in syrup","yes","yes","not apples"],
+  ["Crushed red pepper","Condiment or spice made from red peppers","yes","yes",""],
+  ["Garlic sauce","Sauce with garlic as a main ingredient","yes","yes",""],
+  ["Mushroom gravy","","yes","maybe","i'm thinking biscuits and gravy"],
+  ["Honey","Sweet food made by bees mostly using nectar from flowers","yes","yes",""],
+  ["Hummus","Levantine chickpea puree dish","yes","yes",""],
+  ["Icing","Food producing method","yes","yes",""],
+  ["Lemon","Yellow citrus fruit","yes","yes",""],
+  ["Lettuce","Species of annual plant of the daisy family","yes","yes",""],
+  ["Maple butter","","yes","yes",""],
+  ["Maple syrup","Syrup made from the sap of maple trees","yes","yes",""],
+  ["Marmalade","Preserve made from the juice and peel of citrus fruits","yes","yes",""],
+  ["Mashed Potatoes","","yes","yes",""],
+  ["Meringue","Dessert made from whipped egg whites and sugar","yes","yes",""],
+  ["Miso","Traditional Japanese seasoning","yes","yes",""],
+  ["Nutritional yeast","Type of deactivated yeast","yes","yes","sparingly"],
+  ["Olive oil","Liquid fat made from olives","yes","yes",""],
+  ["Pepper, black","Ground fruit of the family Piperaceae","yes","yes",""],
+  ["Peanut butter","Paste made from ground peanuts","yes","yes",""],
+  ["Pesto","Sauce made from basil, pine nuts, parmesan, garlic, and olive oil","yes","yes","not too parm-y"],
+  ["Pico de gallo","Mexican condiment","yes","yes",""],
+  ["Powdered sugar","Very fine sugar which contains a small amount of anti-caking agent","yes","yes",""],
+  ["Salt","Mineral used as food ingredient, composed primarily of sodium chloride","yes","yes",""],
+  ["Sesame oil","Edible oil from sesame seed","yes","yes",""],
+  ["Sesame seeds","Plant cultivated for its edible seeds","yes","yes",""],
+  ["Soy sauce","East Asian liquid condiment","yes","yes",""],
+  ["Sweet soy sauce","Sweetened aromatic soy sauce, originating from Java, Indonesia","yes","yes",""],
+  ["Sprinkles","Tiny multi-colored candy topping","yes","yes",""],
+  ["Syrup","Thick, viscous solution of sugar in water","yes","yes",""],
+  ["Tahini","Middle Eastern condiment made from sesame","yes","maybe","sparingly"],
+  ["Tomato","Edible berry of the tomato plant, Solanum lycopersicum","yes","","ok cold (salad)"],
+  ["Truffle oil","Oil with truffles or synthetic flavouring","yes","no","sparingly"],
+  ["Whipped cream","Cream whipped until semi-solid","yes","yes",""],
+  ["White pepper","Ground fruit of the family Piperaceae","yes","yes",""],
+  ["Za'atar","Levantine herb or herb blend","yes","yes",""],
+  ["Ajvar","Balkan condiment","unsure","unsure",""],
+  ["Amba","Mango pickle condiment","unsure","unsure",""],
+  ["Béarnaise sauce","Sauce made of clarified butter and egg yolk","unsure","unsure",""],
+  ["Béchamel sauce","Sauce of the Italian and French cuisines","unsure","no","unlikely (too creamy)"],
+  ["Chrain","Horseradish paste","unsure","no","unlikely"],
+  ["Chutney","South Asian condiments made of spices, vegetables, and fruit","unsure","maybe",""],
+  ["Disodium inosinate","umami paste","unsure","unsure",""],
+  ["Fritessaus","Dutch condiment, usually served with French fries","unsure","no",""],
+  ["Garum","Historical fermented fish sauce","unsure","unsure",""],
+  ["Glutamate flavoring","Generic name for flavor-enhancing compounds based on glutamic acid and its salts","unsure","unsure",""],
+  ["Red-eye gravy","Type of gravy","unsure","unsure",""],
+  ["Harissa","North African paste of roasted red peppers, hot peppers, spices, oil, and other flavor ingredients","unsure","no","sounds good"],
+  ["Hoisin sauce","Sauce commonly used in Chinese cuisine","unsure","unsure","I think this is ok"],
+  ["Honey dill","Condiment","unsure","no",""],
+  ["Kachumbari","Tomato-onion salad","unsure","unsure",""],
+  ["Khrenovina","sauce","unsure","unsure",""],
+  ["Kyopolou","Bulgarian-Turkish dish","unsure","unsure",""],
+  ["Ljutenica","dish","unsure","unsure",""],
+  ["Mango chutney","Indian chutney made from unripe mangoes","unsure","no","unlikely"],
+  ["Milkette","Name of various beverages and foods made of equally mixed parts","unsure","unsure",""],
+  ["Monkey gland sauce","South African sauce","unsure","unsure",""],
+  ["Muhammara","Hot pepper dip from Syrian cuisine","unsure","unsure",""],
+  ["Murri","condiment used in Arab cuisine","unsure","unsure",""],
+  ["Mostarda","Condiment from Italy made of candied fruit and mustard","unsure","no",""],
+  ["Mustard oil","Oil derived from plants","unsure","unsure",""],
+  ["Tewkesbury mustard","","unsure","unsure","unlikely"],
+  ["Turun sinappi","Finnish mustard brand established 1926","unsure","unsure",""],
+  ["Pinđur","relish form","unsure","unsure",""],
+  ["Piri-piri","Cultivar of Capsicum frutescens","unsure","unsure",""],
+  ["Chicago-style relish","Condiment","unsure","unsure","unlikely"],
+  ["Kuchela","Trinidadian relish","unsure","unsure",""],
+  ["Sambal","Indonesian spicy relish or sauce","unsure","unsure",""],
+  ["Sumbala","African condiment","unsure","no",""],
+  ["Sweet chili sauce","Condiment primarily used as a dip","unsure","no",""],
+  ["Tekka","miso-condiment","unsure","unsure",""],
+  ["Teriyaki sauce","Japanese marinade","yes","yes",""],
+  ["Toum","Garlic sauce common in the Levant","unsure","unsure",""],
+  ["Velouté sauce","Classic French sauce","unsure","unsure",""],
+  ["Watermelon rind preserves","","unsure","unsure",""],
+  ["XO sauce","Spicy seafood sauce from Hong Kong","unsure","unsure",""],
+  ["Zacuscă","Romanian-Moldovan dish","unsure","unsure",""],
+  ["Coleslaw","Salad consisting primarily of finely-shredded raw cabbage","no*","no*","exception: Bakesale betty fried chicken sandwiches slaw"],
+  ["Fish sauce","Condiment made from fish","no*","no","ok if mixed into approved sauce"],
+  ["Aioli","West Mediterranean sauce of garlic and oil","no","no",""],
+  ["Barbecue sauce","Sauce used as a marinade, basting, topping, or condiment","no","maybe","not an every day kinda thing"],
+  ["Cranberry sauce","Sauce or relish made from cranberries","no","no",""],
+  ["Cream","Dairy product","no","yes","but like is cream really a sauce?"],
+  ["Cocktail sauce","Condiment","no","no",""],
+  ["Dip","Type of sauce","no","no","rarely (guac ok)"],
+  ["Fish paste","Paste made of fish meat","no","no",""],
+  ["Fruit preserves","Preparations of fruits, sugar, and sometimes acid, jams, and jellies","no","maybe",""],
+  ["Fry sauce","Condiment for French fries","no","no","ok if a Wendy's Frosty"],
+  ["Gravy","Sauce made from the juices of meats","no","maybe","i'm thinking thanksgiving gravy"],
+  ["Onion gravy","type of gravy prepared with onions","no","no",""],
+  ["Hollandaise sauce","Sauce made of egg, butter, and lemon","no","no",""],
+  ["Horseradish","Species of flowering plants in the cabbage family Brassicaceae","no","no","ok if fake wasabi"],
+  ["Jalapeños","Hot pepper","no","yes",""],
+  ["Karo","Syrup made from corn used as food additive","no","no","...not by itself"],
+  ["Ketchup","Sauce used as a condiment","no","no",""],
+  ["Banana ketchup","Sauce made from bananas","no","no",""],
+  ["Mushroom ketchup","Style of ketchup","no","no",""],
+  ["Fruit ketchup","Condiment made from fruit","no","no","why are there so many ketchup types. they're all a no"],
+  ["Marinara sauce","Tomato sauce with herbs","no","yes","ok if light on a za/flatbread, not ok for dipping"],
+  ["Mayonnaise","Thick cold sauce","no","no",""],
+  ["Mignonette sauce","Condiment served with oysters","no","no",""],
+  ["Milk","White liquid produced by the mammary glands of mammals","no","yes","ok if alt-milk (oat -> soy -> almond)"],
+  ["Mustard","Condiment made from mustard seeds","no","maybe","it can only be a very small amount. mostly for wetness"],
+  ["Dijon mustard","Type of mustard","no","no",""],
+  ["Nacho cheese","Tortilla chip dish","no","yes",""],
+  ["Oyster sauce","","no","no","ok if mixed in an approved sauce"],
+  ["Pepper jelly","Preserve made with hot peppers","no","no",""],
+  ["Piccalilli","British relish of chopped pickled vegetables and spices","no","no",""],
+  ["South Asian pickle","Pickled varieties of vegetable and fruit","no","no",""],
+  ["Mango pickle","Variety of pickles prepared using mango","no","no",""],
+  ["Pickled fruit","Fruit that has been preserved by anaerobic fermentation in brine or immersion in vinegar","no","no",""],
+  ["Pickled onion","Onions pickled in a solution of vinegar or salt","no","no",""],
+  ["Pickled pepper","Capsicum pepper preserved by pickling","no","no",""],
+  ["Popcorn seasoning","Seasoning","no","no","ok if v light/mild"],
+  ["Relish","Cooked, pickled, or chopped vegetable or fruit used as a condiment","no","no",""],
+  ["Remoulade","Mayonnaise-based cold sauce","no","no",""],
+  ["Salad dressing","Condiment","no","maybe","ok if EVOO + lemon/lime"],
+  ["Salad dressing spread","Salad dressing and mayonnaise substitute","no","no",""],
+  ["Salsa","Condiment used in Mexican cuisine","no","yes",""],
+  ["Salsa golf","Cold sauce of mayonnaise and tomatoes","no","no","that sounds like a nightmare"],
+  ["Salsa verde","Spicy Mexican sauce based on tomatillos","no","yes",""],
+  ["Sauerkraut","Finely sliced and fermented cabbage","no","no",""],
+  ["Sour cream","Fermented dairy product","no","no",""],
+  ["Steak sauce","Brown sauce for seasoning of steaks","no","yes","only A1. the classic"],
+  ["Sriracha sauce","Thai hot sauce","no","no",""],
+  ["Tartar sauce","Mayonnaise-based cold sauce","no","no",""],
+  ["Tzatziki","Cold cucumber-yogurt dip, soup, or sauce","no","no",""],
+  ["Vegenaise","American vegan food company","no","no",""],
+  ["Vinegar","Liquid consisting mainly of acetic acid and water","no","yes",""],
+  ["Black vinegar","Dark-colored vinegar in Chinese cuisine","no","unsure",""],
+  ["Ranch Dressing","","no","no",""],
+  ["Cheese","Curdled milk food product","maybe","yes","not into melted or funky cheese"]
+];
+
+const STORAGE_KEY = 'sauce_guide_v1';
+
+function loadSauces() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  return RAW.map(r => ({ name: r[0], description: r[1], nemo: normalize(r[2]), chipper: normalize(r[3]), notes: r[4] || '' }));
+}
+
+function saveSauces() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sauces));
+}
+
+function normalize(v) {
+  if (!v) return '';
+  const s = v.toString().toLowerCase().trim();
+  if (s === 'yes') return 'yes';
+  if (s === 'no*') return 'no*';
+  if (s === 'no') return 'no';
+  if (s === 'maybe') return 'maybe';
+  if (s === 'unsure') return 'unsure';
+  return s;
+}
+
+let sauces = loadSauces();
+let currentFilter = 'all';
+let sortKey = 'name';
+let sortDir = 1;
+let editingIdx = null;
+
+function ratingOrder(r) {
+  return { yes: 0, maybe: 1, unsure: 2, 'no*': 3, no: 4, '': 5 }[r] ?? 5;
+}
+
+function setFilter(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.filter;
+  render();
+}
+
+function setSort(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+  document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+  const headers = ['name','description','nemo','chipper'];
+  const idx = headers.indexOf(key);
+  if (idx >= 0) document.querySelectorAll('th')[idx].classList.add('sorted');
+  render();
+}
+
+function filtered() {
+  const q = document.getElementById('search').value.toLowerCase();
+  return sauces.filter(s => {
+    const matchQ = !q || [s.name, s.description, s.notes].some(f => f && f.toLowerCase().includes(q));
+    if (!matchQ) return false;
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'yes') return s.nemo === 'yes' && s.chipper === 'yes';
+    if (currentFilter === 'nemo-yes') return s.nemo === 'yes';
+    if (currentFilter === 'chipper-yes') return s.chipper === 'yes';
+    if (currentFilter === 'unsure') return s.nemo === 'unsure' || s.chipper === 'unsure';
+    if (currentFilter === 'no') return s.nemo === 'no' && s.chipper === 'no';
+    return true;
+  });
+}
+
+function sorted(arr) {
+  return [...arr].sort((a, b) => {
+    let av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
+    if (sortKey === 'nemo' || sortKey === 'chipper') {
+      return sortDir * (ratingOrder(av) - ratingOrder(bv));
+    }
+    return sortDir * av.localeCompare(bv);
+  });
+}
+
+function ratingBadge(r) {
+  const map = { yes: ['yes','Yes'], no: ['no','No'], 'no*': ['noestar','No*'], maybe: ['maybe','Maybe'], unsure: ['unsure','Unsure'], '': ['blank','—'] };
+  const [cls, label] = map[r] ?? ['blank','—'];
+  return `<span class="rating ${cls}">${label}</span>`;
+}
+
+function render() {
+  const data = sorted(filtered());
+  const tbody = document.getElementById('tbody');
+  document.getElementById('countBadge').textContent = `${sauces.length} sauces`;
+  if (!data.length) {
+    tbody.innerHTML = '';
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  document.getElementById('emptyState').style.display = 'none';
+  tbody.innerHTML = data.map(s => {
+    const idx = sauces.indexOf(s);
+    return `<tr>
+      <td class="name-cell">${esc(s.name)}<span class="edit-link" onclick="openEdit(${idx})">✏️</span></td>
+      <td class="desc-cell">${esc(s.description)}</td>
+      <td>${ratingBadge(s.nemo)}</td>
+      <td>${ratingBadge(s.chipper)}</td>
+      <td class="notes-cell">${esc(s.notes)}</td>
+      <td></td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openModal() {
+  editingIdx = null;
+  document.getElementById('modalTitle').textContent = 'Add New Sauce';
+  document.getElementById('fName').value = '';
+  document.getElementById('fDesc').value = '';
+  document.getElementById('fNemo').value = 'unsure';
+  document.getElementById('fChipper').value = 'unsure';
+  document.getElementById('fNotes').value = '';
+  document.getElementById('modalBg').classList.add('open');
+  document.getElementById('fName').focus();
+}
+
+function openEdit(idx) {
+  editingIdx = idx;
+  const s = sauces[idx];
+  document.getElementById('modalTitle').textContent = 'Edit Sauce';
+  document.getElementById('fName').value = s.name;
+  document.getElementById('fDesc').value = s.description;
+  document.getElementById('fNemo').value = s.nemo || 'unsure';
+  document.getElementById('fChipper').value = s.chipper || 'unsure';
+  document.getElementById('fNotes').value = s.notes;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+}
+
+function closeIfBg(e) {
+  if (e.target === document.getElementById('modalBg')) closeModal();
+}
+
+function saveSauce() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { document.getElementById('fName').focus(); return; }
+  const sauce = {
+    name,
+    description: document.getElementById('fDesc').value.trim(),
+    nemo: document.getElementById('fNemo').value,
+    chipper: document.getElementById('fChipper').value,
+    notes: document.getElementById('fNotes').value.trim()
+  };
+  if (editingIdx !== null) {
+    sauces[editingIdx] = sauce;
+  } else {
+    sauces.push(sauce);
+    document.getElementById('search').value = '';
+  }
+  saveSauces();
+  closeModal();
+  render();
+}
+
+function openModalFromSearch() {
+  const q = document.getElementById('search').value.trim();
+  openModal();
+  if (q) document.getElementById('fName').value = q;
+}
+
+function updateToolbarHeight() {
+  const h = document.querySelector('.toolbar').getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--toolbar-h', Math.round(h) + 'px');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+window.addEventListener('resize', updateToolbarHeight);
+updateToolbarHeight();
+render();
+</script>
+</body>
+</html>
